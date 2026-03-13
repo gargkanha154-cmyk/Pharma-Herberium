@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharma-Herb | Digital Herbarium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lora:wght@400;500&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #fdfaf3;
+            --ink: #2b2b2b;
+            --leaf: #3e5c3e;
+            --accent: #8c6d31;
+            --border: #d1c7ac;
+            --caution: #a34b3e;
+        }
+
+        body {
+            font-family: 'Lora', serif;
+            background-color: var(--paper);
+            color: var(--ink);
+            margin: 0;
+            padding: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+        }
+
+        header {
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 3px double var(--accent);
+            padding: 20px;
+            background-color: #f4efdf;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            color: var(--leaf);
+            margin: 0;
+            letter-spacing: 4px;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            max-width: 650px;
+            margin-top: 15px;
+            font-style: italic;
+            border-top: 1px solid var(--accent);
+            padding-top: 15px;
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .grid-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: var(--leaf);
+        }
+
+        .herb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .herb-card {
+            background: white;
+            border: 1px solid var(--border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            overflow: hidden;
+        }
+
+        .herb-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .card-img-preview {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .herb-card h3 {
+            margin: 15px 0 5px 0;
+            font-family: 'Playfair Display', serif;
+            color: var(--leaf);
+        }
+
+        /* --- Detail Overlay --- */
+        #detail-view {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--paper);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .detail-wrapper {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .close-btn {
+            position: sticky;
+            top: 10px;
+            background: var(--leaf);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .detail-img {
+            width: 100%;
+            max-height: 450px;
+            object-fit: contain;
+            background: #fdfaf3;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+        }
+
+        .section-h {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            color: var(--leaf);
+            border-bottom: 1px solid #eee;
+            margin-top: 25px;
+            padding-bottom: 5px;
+        }
+
+        .info-text { margin: 10px 0; line-height: 1.6; }
+
+        .tax-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tax-table td { padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem;}
+        .tax-table td:first-child { font-weight: bold; color: var(--accent); width: 30%; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>PHARMA-HERB</h1>
+        <div class="tagline">Digital Monograph of Medicinal Botanicals</div>
+    </header>
+
+    <div class="container">
+        <h2 class="grid-title">Herbarium Index</h2>
+        <div class="herb-grid" id="herbGrid"></div>
+    </div>
+
+    <div id="detail-view">
+        <div class="detail-wrapper">
+            <button class="close-btn" onclick="closeDetail()">← BACK</button>
+            <div id="content-target"></div>
+        </div>
+    </div>
+
+    <script>
+        const herbs = [
+            {
+                name: "Turmeric",
+                sci: "Curcuma longa",
+                img: "https://upload.wikimedia.org/wikipedia/commons/5/5b/Curcuma_longa_roots.jpg",
+                taxonomy: { Kingdom: "Plantae", Family: "Zingiberaceae", Genus: "Curcuma", Species: "longa L." },
+                morphology: "Thick, highly branched rhizomes, bright yellow-orange internally. Large oblong leaves.",
+                habitat: "Native to Southern India and SE Asia.",
+                phytochemicals: "Curcuminoids (Curcumin), volatile oils.",
+                therapeutic: "Strong anti-inflammatory, antioxidant, hepatoprotective.",
+                cautions: "Interacts with blood thinners."
+            },
+            {
+                name: "Ginger",
+                sci: "Zingiber officinale",
+                img: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Zingiber_officinale_-_Köhler–s_Medizinal-Pflanzen-146.jpg",
+                taxonomy: { Kingdom: "Plantae", Family: "Zingiberaceae", Genus: "Zingiber", Species: "officinale" },
+                morphology: "Knobby rhizomes, horizontal growth. Pale yellow internal flesh.",
+                habitat: "Tropical regions of Asia.",
+                phytochemicals: "Gingerols, Shogaols.",
+                therapeutic: "Antiemetic, digestive stimulant.",
+                cautions: "High doses may increase bleeding risk."
+            },
+            {
+                name: "Garlic",
+                sci: "Allium sativum",
+                img: "https://upload.wikimedia.org/wikipedia/commons/d/d6/Allium_sativum_-_Köhler–s_Medizinal-Pflanzen-156.jpg",
+                taxonomy: { Family: "Amaryllidaceae", Genus: "Allium", Species: "sativum" },
+                morphology: "Bulb composed of cloves with white/purple papery skin.",
+                habitat: "Central Asia origin.",
+                phytochemicals: "Allicin, S-allylcysteine.",
+                therapeutic: "Antimicrobial, lowers blood pressure.",
+                cautions: "May cause GI upset."
+            },
+            {
+                name: "Peppermint",
+                sci: "Mentha piperita",
+                img: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Mentha_x_piperita_-_Köhler–s_Medizinal-Pflanzen-095.jpg",
+                taxonomy: { Family: "Lamiaceae", Genus: "Mentha", Species: "piperita" },
+                morphology: "Square stems, dark green leaves, strong menthol aroma.",
+                habitat: "Europe/Temperate regions.",
+                phytochemicals: "Menthol, Menthone.",
+                therapeutic: "Antispasmodic, digestive relief.",
+                cautions: "Avoid in infants."
+            },
+            {
+                name: "Basil",
+                sci: "Ocimum basilicum",
+                img: "https://upload.wikimedia.org/wikipedia/commons/9/90/Ocimum_basilicum_001.JPG",
+                taxonomy: { Family: "Lamiaceae", Genus: "Ocimum", Species: "basilicum" },
+                morphology: "Glossy green ovate leaves, white lipped flowers.",
+                habitat: "Tropical Asia/Africa.",
+                phytochemicals: "Eugenol, Linalool.",
+                therapeutic: "Antibacterial, anti-inflammatory.",
+                cautions: "Generally safe."
+            },
+            {
+                name: "Rosemary",
+                sci: "Salvia rosmarinus",
+                img: "https://upload.wikimedia.org/wikipedia/commons/1/12/Salvia_rosmarinus_01.jpg",
+                taxonomy: { Family: "Lamiaceae", Genus: "Salvia", Species: "rosmarinus" },
+                morphology: "Needle-like leaves, woody stems, blue flowers.",
+                habitat: "Mediterranean.",
+                phytochemicals: "Rosmarinic acid, Camphor.",
+                therapeutic: "Memory enhancement, antioxidant.",
+                cautions: "Avoid medicinal doses in pregnancy."
+            },
+            {
+                name: "Cinnamon",
+                sci: "Cinnamomum verum",
+                img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Cinnamomum_verum_-_Köhler–s_Medizinal-Pflanzen-042.jpg",
+                taxonomy: { Family: "Lauraceae", Genus: "Cinnamomum", Species: "verum" },
+                morphology: "Inner tree bark forming quills, thin and aromatic.",
+                habitat: "Sri Lanka.",
+                phytochemicals: "Cinnamaldehyde, Eugenol.",
+                therapeutic: "Blood sugar support.",
+                cautions: "Low coumarin in 'True' Cinnamon."
+            },
+            {
+                name: "Oregano",
+                sci: "Origanum vulgare",
+                img: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Origanum_vulgare_2.jpg",
+                taxonomy: { Family: "Lamiaceae", Genus: "Origanum", Species: "vulgare" },
+                morphology: "Small ovate leaves, purple-pink dense spikes.",
+                habitat: "Mediterranean.",
+                phytochemicals: "Carvacrol, Thymol.",
+                therapeutic: "Antimicrobial, antioxidant.",
+                cautions: "Potent oil; must be diluted."
+            },
+            {
+                name: "Sage",
+                sci: "Salvia officinalis",
+                img: "https://upload.wikimedia.org/wikipedia/commons/5/52/Salvia_officinalis_-_Köhler–s_Medizinal-Pflanzen-034.jpg",
+                taxonomy: { Family: "Lamiaceae", Genus: "Salvia", Species: "officinalis" },
+                morphology: "Gray-green pebbly leaves, blue-purple whorls.",
+                habitat: "Mediterranean.",
+                phytochemicals: "Thujone, Rosmarinic acid.",
+                therapeutic: "Menopausal relief, cognition.",
+                cautions: "Thujone toxic in high excess."
+            },
+            {
+                name: "Chamomile",
+                sci: "Matricaria chamomilla",
+                img: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Matricaria_chamomilla_-_Köhler–s_Medizinal-Pflanzen-098.jpg",
+                taxonomy: { Family: "Asteraceae", Genus: "Matricaria", Species: "chamomilla" },
+                morphology: "Daisy-like heads, feathery divided leaves.",
+                habitat: "Europe/Asia.",
+                phytochemicals: "Apigenin, Chamazulene.",
+                therapeutic: "Anxiolytic, digestive aid.",
+                cautions: "Asteraceae allergy risk."
+            },
+            {
+                name: "Ashwagandha",
+                sci: "Withania somnifera",
+                img: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Withania_somnifera_plant.jpg",
+                taxonomy: { Family: "Solanaceae", Genus: "Withania" },
+                morphology: "Shrubby perennial, orange-red berries, tuberous root.",
+                habitat: "India/Africa.",
+                phytochemicals: "Withanolides.",
+                therapeutic: "Adaptogenic, stress reduction.",
+                cautions: "Thyroid interaction."
+            },
+            {
+                name: "Echinacea",
+                sci: "Echinacea purpurea",
+                img: "https://upload.wikimedia.org/wikipedia/commons/1/1d/Echinacea_purpurea_001.JPG",
+                taxonomy: { Family: "Asteraceae", Genus: "Echinacea" },
+                morphology: "Purple daisy-like heads, spiny cone center.",
+                habitat: "North America.",
+                phytochemicals: "Alkylamides.",
+                therapeutic: "Immune stimulant.",
+                cautions: "Autoimmune caution."
+            },
+            {
+                name: "Ginkgo",
+                sci: "Ginkgo biloba",
+                img: "https://upload.wikimedia.org/wikipedia/commons/b/b5/Ginkgo_biloba_leaves_Botanischer_Garten_Heidelberg.jpg",
+                taxonomy: { Family: "Ginkgoaceae", Genus: "Ginkgo" },
+                morphology: "Fan-shaped bilobed leaves.",
+                habitat: "China.",
+                phytochemicals: "Ginkgolides.",
+                therapeutic: "Memory, circulation.",
+                cautions: "Bleeding risk."
+            },
+            {
+                name: "Holy Basil (Tulsi)",
+                sci: "Ocimum tenuiflorum",
+                img: "https://upload.wikimedia.org/wikipedia/commons/d/d3/Ocimum_tenuiflorum_Plant_01.jpg",
+                taxonomy: { Family: "Lamiaceae", Genus: "Ocimum" },
+                morphology: "Purple stems, hairy leaves.",
+                habitat: "India.",
+                phytochemicals: "Eugenol.",
+                therapeutic: "Adaptogenic, respiratory support.",
+                cautions: "Safe generally."
+            },
+            {
+                name: "Milk Thistle",
+                sci: "Silybum marianum",
+                img: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Silybum_marianum_flower_head.jpg",
+                taxonomy: { Family: "Asteraceae", Genus: "Silybum" },
+                morphology: "Spiny leaves with white veins.",
+                habitat: "Mediterranean.",
+                phytochemicals: "Silymarin.",
+                therapeutic: "Hepatoprotective.",
+                cautions: "Mild GI upset."
+            },
+            {
+                name: "Ginseng",
+                sci: "Panax ginseng",
+                img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Panax_ginseng_-_Plant_and_roots.jpg",
+                taxonomy: { Family: "Araliaceae", Genus: "Panax" },
+                morphology: "Forked fleshy root, red berries.",
+                habitat: "East Asia.",
+                phytochemicals: "Ginsenosides.",
+                therapeutic: "Adaptogenic, energizing.",
+                cautions: "Insomnia if overused."
+            },
+            {
+                name: "Feverfew",
+                sci: "Tanacetum parthenium",
+                img: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Tanacetum_parthenium_-_Feverfew.jpg",
+                taxonomy: { Family: "Asteraceae", Genus: "Tanacetum" },
+                morphology: "Daisy flowers, feathery leaves.",
+                habitat: "Europe/Asia.",
+                phytochemicals: "Parthenolide.",
+                therapeutic: "Antimigraine.",
+                cautions: "Mouth ulcers."
+            },
+            {
+                name: "Brahmi",
+                sci: "Bacopa monnieri",
+                img: "https://upload.wikimedia.org/wikipedia/commons/e/e5/Bacopa_monnieri_-_Brahmi.jpg",
+                taxonomy: { Family: "Plantaginaceae", Genus: "Bacopa" },
+                morphology: "Creeping succulent, blue-white flowers.",
+                habitat: "India/Asia wetlands.",
+                phytochemicals: "Bacosides.",
+                therapeutic: "Nootropic, brain booster.",
+                cautions: "GI upset."
+            },
+            {
+                name: "Gotu Kola",
+                sci: "Centella asiatica",
+                img: "https://upload.wikimedia.org/wikipedia/commons/b/b3/Centella_asiatica_-_Gotu_Kola.jpg",
+                taxonomy: { Family: "Apiaceae", Genus: "Centella" },
+                morphology: "Kidney-shaped leaves.",
+                habitat: "Asia wetlands.",
+                phytochemicals: "Asiaticoside.",
+                therapeutic: "Wound healing.",
+                cautions: "Rare allergy."
+            },
+            {
+                name: "Valerian",
+                sci: "Valeriana officinalis",
+                img: "https://upload.wikimedia.org/wikipedia/commons/e/eb/Valeriana_officinalis_-_Valerian.jpg",
+                taxonomy: { Family: "Caprifoliaceae", Genus: "Valeriana" },
+                morphology: "Pinnate leaves, pink-white flowers.",
+                habitat: "Europe/Asia.",
+                phytochemicals: "Valerenic acid.",
+                therapeutic: "Sedative, sleep aid.",
+                cautions: "Drowsiness."
+            }
+        ];
+
+        const grid = document.getElementById('herbGrid');
+        herbs.forEach((h, i) => {
+            const card = document.createElement('div');
+            card.className = 'herb-card';
+            card.innerHTML = `<img src="${h.img}" class="card-img-preview"><h3>${h.name}</h3><p><i>${h.sci}</i></p>`;
+            card.onclick = () => showHerb(i);
+            grid.appendChild(card);
+        });
+
+        function showHerb(index) {
+            const h = herbs[index];
+            const target = document.getElementById('content-target');
+            target.innerHTML = `
+                <img src="${h.img}" class="detail-img">
+                <h2 style="margin:0; font-family:'Playfair Display'">${h.name}</h2>
+                <div style="color:var(--accent); font-style:italic; margin-bottom:20px;">${h.sci}</div>
+                
+                <div class="section-h">Taxonomy</div>
+                <table class="tax-table">
+                    ${Object.entries(h.taxonomy).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')}
+                </table>
+
+                <div class="section-h">Botanical Morphology</div>
+                <div class="info-text">${h.morphology}</div>
+
+                <div class="section-h">Major Phytochemicals</div>
+                <div class="info-text">${h.phytochemicals}</div>
+
+                <div class="section-h">Therapeutic Effects</div>
+                <div class="info-text">${h.therapeutic}</div>
+
+                <div class="section-h" style="color:var(--caution)">Safety Cautions</div>
+                <div class="info-text"><i>${h.cautions}</i></div>
+            `;
+            document.getElementById('detail-view').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-view').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
